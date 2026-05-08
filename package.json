@@ -2,9 +2,11 @@
   "name": "sbsmart-api",
   "version": "1.0.0",
   "description": "e-commerce",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start" : "node server.js"
+
   },
   "repository": {
     "type": "git",
@@ -18,7 +20,9 @@
   "homepage": "https://github.com/RounakGupta0/sbsMart-api#readme",
   "dependencies": {
     "body-parser": "^2.2.2",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mongoose": "^9.6.1"
+    "mongoose": "^9.6.1",
+    "nodemon": "^3.1.14"
   }
 }

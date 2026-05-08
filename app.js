@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express')
 const app = express()
 const mongoose = require('mongoose')
@@ -11,7 +12,7 @@ const orderRoutes = require('./Routes/order')
 const ConnectwithDatabase = async()=>{
     try
     {
-        await mongoose.connect()
+        await mongoose.connect(process.env.MONGODB_URL)
         console.log('Connected With database')
     }
     catch(err)
