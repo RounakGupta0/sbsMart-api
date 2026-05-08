@@ -15,5 +15,10 @@
   "bugs": {
     "url": "https://github.com/RounakGupta0/sbsMart-api/issues"
   },
-  "homepage": "https://github.com/RounakGupta0/sbsMart-api#readme"
+  "homepage": "https://github.com/RounakGupta0/sbsMart-api#readme",
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "express": "^5.2.1",
+    "mongoose": "^9.6.1"
+  }
 }
