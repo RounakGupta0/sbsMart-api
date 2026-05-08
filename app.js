@@ -7,6 +7,7 @@ const userRoutes = require('./Routes/user')
 const productRoutes = require('./Routes/product')
 const cartRoutes = require('./Routes/cart')
 const orderRoutes = require('./Routes/order')
+const fileupload = require('express-fileupload')
 
 
 const ConnectwithDatabase = async()=>{
@@ -24,6 +25,11 @@ const ConnectwithDatabase = async()=>{
 
 ConnectwithDatabase()
 
+
+app.use(fileupload({
+    useTempFiles:true,
+    tempFileDir:'/tmp/'
+}))
 
 app.use(bodyParser.urlencoded())
 app.use(bodyParser.json())
