@@ -34,9 +34,15 @@ Router.post('/signup', async (req, res) => {
         })
 
         await newUser.save()
+        const result = {
+            fullName : newUser.fullName,
+            email : newUser.email,
+            phone : newUser.phone
+        }
 
         res.status(200).json({
-            data: newUser
+            data: result,
+            msg : ' new user added'
         })
     }
     catch (err) {
@@ -75,13 +81,53 @@ Router.post('/login', async (req, res) => {
             })
 
         res.status(200).json({
-            token: token
+            token: token,
+            fullName : user[0].fullName,
+            email : user[0].email,
+            phone: user[0].phone
         })
     }
     catch (err) {
         console.log(err)
         res.status(500).json({
             error: err
+        })
+    }
+})
+
+Router.delete('/:id',async(req,res)=>{
+    try
+    {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token,process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL)
+        {
+            return res.status(500).json({
+                warning : 'you dont have permisson to perform this operation'
+            })
+        }
+
+        const user = await User.findById(req.params.id)
+        if (!user)
+        {
+            return res.status(404).json({
+                msg : ' no user found'
+            })
+        }
+
+        await cloudinary.uploader.destroy(user.imageId)
+        await User.findByIdAndDelete(req.params.id)
+
+        res.status(200).json({
+            msg : 'user removed successfully'
+        })
+    }
+    catch (err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
         })
     }
 })
