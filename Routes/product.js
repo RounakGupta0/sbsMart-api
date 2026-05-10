@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express')
 const Router = express.Router()
 const Product = require('../models/Products')
@@ -25,7 +26,7 @@ Router.post('/add-product', async (req, res) => {
         // const imageCount = req.files.images.length
         // console.log(imageCount)
 
-        let newimage = []
+        const newimage = []
 
         for (let i of req.files.images) {   // forEach wait nhi krta upload krne ka to for.. of use kr rha mai
 
@@ -65,6 +66,71 @@ Router.post('/add-product', async (req, res) => {
         console.log(err)
         res.status(500).json({
             error: err
+        })
+    }
+})
+
+Router.get('/all-products',async(req,res)=>{
+    try 
+    {
+        const product = await Product.find().select("name images")
+        res.status(200).json({
+            products : product
+        })
+    }
+    catch (err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
+        })    
+    }
+})
+
+Router.get('/byCategory/:category',async(req,res)=>{
+    try
+    {
+        const product = await Product.find({category : req.params.category}).select('name images')
+        console.log(product)
+        if(product.length == 0)
+        {
+            return res.status(500).json({
+                msg : 'no products found for the matching category'
+            })
+        }
+
+        res.status(200).json({
+            products : product
+        })
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
+        })
+    }
+})
+
+Router.get('/byName/:name',async(req,res)=>{
+    try
+    {
+        const product = await Product.find({name : req.params.name}).select('name images')
+        if (product.length == 0)
+        {
+            return res.status(500).json({
+                msg : 'no products found for the matching name'
+            })
+        }
+        res.status(200).json({
+            products : product
+        })
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
         })
     }
 })
