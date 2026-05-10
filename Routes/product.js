@@ -23,9 +23,14 @@ Router.post('/add-product', async (req, res) => {
             })
         }
         // console.log('hello')
-        // const imageCount = req.files.images.length
+        const imageCount = req.files.images.length
         // console.log(imageCount)
-
+        if (imageCount > 5)
+        {
+            return res.status(500).json({
+                msg : 'max allowed limit of image upload reached kindly add upto 5 images only'
+            })
+        }
         const newimage = []
 
         for (let i of req.files.images) {   // forEach wait nhi krta upload krne ka to for.. of use kr rha mai
@@ -135,5 +140,59 @@ Router.get('/byName/:name',async(req,res)=>{
     }
 })
 
+Router.put('/update/:productId',async(req,res)=>{
+    try
+    {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token,process.env.SEC_KEY)
+        
+        if (tokenData.email != process.env.ADMIN_EMAIL)
+        {
+            return res.status(500).json({
+                warning : 'you dont have permisson to perform this operation'
+            })
+        }
+
+        const product = await Product.findById(req.params.productId)
+        if (!product)
+        {
+            return res.status(404).json({
+                msg :' no product found'
+            })
+        }
+
+        // for (let i of product.images)
+        // {
+        //     // console.log(i.imageId)
+        //     await cloudinary.uploader.destroy(i.imageId)
+        // }
+        
+        const newproduct = {
+            name : req.body.name,
+            price : req.body.price,
+            brand : req.body.brand,
+            description : req.body.description,
+            images : product.images,
+            stock : req.body.stock,
+            category : req.body.category,
+            likeCount : product.likeCount,
+            likedBy : product.likedBy,
+        }
+
+        const updatedData = await Product.findByIdAndUpdate(req.params.productId,newproduct,{ new : true })
+        res.status(200).json({
+            msg : 'updated successfully',
+            data : updatedData
+        })
+
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
+        })
+    }
+})
 
 module.exports = Router

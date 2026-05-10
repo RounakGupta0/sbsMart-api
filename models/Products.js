@@ -32,7 +32,7 @@ const productSchema = mongoose.Schema({
         {
             imageUrl :{type : String},
             imageId : {type : String}
-        }
+        },
     ],
 
     likeCount : {
