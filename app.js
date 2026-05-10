@@ -7,7 +7,10 @@ const userRoutes = require('./Routes/user')
 const productRoutes = require('./Routes/product')
 const cartRoutes = require('./Routes/cart')
 const orderRoutes = require('./Routes/order')
+const adminRoutes = require('./Routes/admin')
 const fileupload = require('express-fileupload')
+const dns =require('dns')
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 
 const ConnectwithDatabase = async()=>{
@@ -38,6 +41,7 @@ app.use('/user',userRoutes)
 app.use('/product',productRoutes)
 app.use('/cart',cartRoutes)
 app.use('/order',orderRoutes)
+app.use('/admin',adminRoutes)
 
 
 module.exports = app
