@@ -25,10 +25,10 @@ Router.post('/add-product', async (req, res) => {
         // console.log('hello')
         const imageCount = req.files.images.length
         // console.log(imageCount)
-        if (imageCount > 5)
+        if (imageCount<2 || imageCount > 10)
         {
             return res.status(500).json({
-                msg : 'max allowed limit of image upload reached kindly add upto 5 images only'
+                msg : 'upload minimum 2 image and maximum 10 images'
             })
         }
         const newimage = []
@@ -140,6 +140,26 @@ Router.get('/byName/:name',async(req,res)=>{
     }
 })
 
+
+Router.get('/:productId',async(req,res)=>{
+    try
+    {
+        const product = await Product.findById(req.params.productId)
+        res.status(200).json({
+            product :product
+        })
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
+        })
+    }
+})
+
+
+
 Router.put('/update/:productId',async(req,res)=>{
     try
     {
@@ -194,5 +214,135 @@ Router.put('/update/:productId',async(req,res)=>{
         })
     }
 })
+
+Router.delete('/:productId',async(req,res)=>{
+    try
+    {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token,process.env.SEC_KEY)
+        
+        if (tokenData.email != process.env.ADMIN_EMAIL)
+        {
+            return res.status(500).json({
+                warning : 'you dont have permisson to perform this operation'
+            })
+        }
+
+        const product = await Product.findById(req.params.productId)
+        if (!product)
+        {
+            return res.status(500).json({
+                msg : 'no product found'
+            })
+        }
+
+        for (let i of product.images)
+        {
+            const deleted = await cloudinary.uploader.destroy(i.imageId)
+            if (deleted.result != 'ok')
+            {
+
+                return res.status(500).json({
+                    msg : 'something went wrong pls try again later'
+                })
+            }
+
+        }
+
+        await Product.findByIdAndDelete(req.params.productId)
+        // console.log(deletedProduct)
+
+        res.status(200).json({
+            msg : 'product deleted successfully'
+        })
+
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
+        })
+    }
+})
+
+Router.patch('/stockadd/:productId',async(req,res)=>{
+    try
+    {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token,process.env.SEC_KEY)
+        
+        if (tokenData.email != process.env.ADMIN_EMAIL)
+        {
+            return res.status(500).json({
+                warning : 'you dont have permisson to perform this operation'
+            })
+        }
+
+        const product = await Product.findById(req.params.productId)
+
+        const stock = {
+            stock : Number(req.body.stock) + product.stock
+        }
+
+        const updatedData = await Product.findByIdAndUpdate(req.params.productId,stock,{new : true})
+        //console.log(updatedData)
+
+        res.status(200).json({
+            msg : 'stock updated successfully',
+            data : updatedData
+        })
+
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
+        })
+    }
+})
+
+Router.patch('/priceChange/:productId',async(req,res)=>{
+    try
+    {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token,process.env.SEC_KEY)
+        
+        if (tokenData.email != process.env.ADMIN_EMAIL)
+        {
+            return res.status(500).json({
+                warning : 'you dont have permisson to perform this operation'
+            })
+        }
+
+        const product = await Product.findById(req.params.productId)
+        if (!product)
+        {
+            return res.status(500).json({
+                msg : 'no product found'
+            })
+        }
+
+        const price = {
+            price : req.body.price
+        }
+
+        const updatedPrice = await Product.findByIdAndUpdate(req.params.productId,price,{new : true})
+
+        res.status(200).json({
+            msg : 'price updated successfully',
+            data : updatedPrice
+        })
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
+        })
+    }
+})
+
 
 module.exports = Router

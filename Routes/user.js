@@ -37,7 +37,9 @@ Router.post('/signup', async (req, res) => {
         const result = {
             fullName : newUser.fullName,
             email : newUser.email,
-            phone : newUser.phone
+            phone : newUser.phone,
+            imageUrl : uploadedImage.secure_url,
+            imageId : uploadedImage.public_id
         }
 
         res.status(200).json({
@@ -84,7 +86,9 @@ Router.post('/login', async (req, res) => {
             token: token,
             fullName : user[0].fullName,
             email : user[0].email,
-            phone: user[0].phone
+            phone: user[0].phone,
+            imageId : user[0].imageId,
+            imageUrl : user[0].imageUrl
         })
     }
     catch (err) {
