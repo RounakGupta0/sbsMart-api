@@ -79,6 +79,12 @@ Router.get('/all-products',async(req,res)=>{
     try 
     {
         const product = await Product.find().select("name images")
+
+        product.forEach(i=> {
+            i.images = i.images[0]
+        })
+        //console.log(product)
+
         res.status(200).json({
             products : product
         })
@@ -96,13 +102,17 @@ Router.get('/byCategory/:category',async(req,res)=>{
     try
     {
         const product = await Product.find({category : req.params.category}).select('name images')
-        console.log(product)
+        
         if(product.length == 0)
         {
             return res.status(500).json({
                 msg : 'no products found for the matching category'
             })
         }
+
+        product.forEach(i=> {
+            i.images = i.images[0]
+        })
 
         res.status(200).json({
             products : product
@@ -127,6 +137,10 @@ Router.get('/byName/:name',async(req,res)=>{
                 msg : 'no products found for the matching name'
             })
         }
+
+        product.forEach(i=> {
+            i.images = i.images[0]
+        })
         res.status(200).json({
             products : product
         })
@@ -144,7 +158,7 @@ Router.get('/byName/:name',async(req,res)=>{
 Router.get('/:productId',async(req,res)=>{
     try
     {
-        const product = await Product.findById(req.params.productId)
+        const product = await Product.findById(req.params.productId).select('name description images brand price category likeCount')
         res.status(200).json({
             product :product
         })
@@ -280,6 +294,11 @@ Router.patch('/stockadd/:productId',async(req,res)=>{
         }
 
         const product = await Product.findById(req.params.productId)
+        if (!product){
+            return res.status(500).json({
+                msg : 'product not found'
+            })
+        }
 
         const stock = {
             stock : Number(req.body.stock) + product.stock

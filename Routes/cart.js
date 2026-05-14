@@ -136,64 +136,87 @@ Router.delete('/removeFromCart/:productId', async (req, res) => {
     }
 })
 
-Router.patch('/editQuantity/:productId',async(req,res)=>{
-    try
-    {
+Router.patch('/editQuantity/:productId', async (req, res) => {
+    try {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
 
-        const cart = await Cart.findOne({userId : tokenData.userId})
-        if (!cart)
-        {
+        const cart = await Cart.findOne({ userId: tokenData.userId })
+        if (!cart) {
             return res.status(404).json({
-                msg : 'cart not found'
+                msg: 'cart not found'
             })
         }
 
         const product = await Products.findById(req.params.productId)
-        if (!product){
+        if (!product) {
             return res.status(500).json({
-                msg : 'product not found'
+                msg: 'product not found'
             })
         }
         //console.log(cart)
         const cartProduct = cart.products.find(i => i.productId.toString() === req.params.productId)
         console.log(cartProduct)
-        if (!cartProduct)
-        {
+        if (!cartProduct) {
             return res.status(500).json({
-                msg : 'product not found'
+                msg: 'product not found'
             })
         }
         else {
-            if (Number(req.body.quantity) > product.stock)
-            {
+            if (Number(req.body.quantity) > product.stock) {
                 return res.status(500).json({
-                    msg : `sorry we only got ${product.stock} of such items in the stock `
+                    msg: `sorry we only got ${product.stock} of such items in the stock `
                 })
             }
-            
-            if (Number(req.body.quantity) > 5 || Number(req.body.quantity) < 1)
-            {
+
+            if (Number(req.body.quantity) > 5 || Number(req.body.quantity) < 1) {
                 return res.status(500).json({
-                    msg : 'please enter a valid quantity (not more then 5)'
+                    msg: 'please enter a valid quantity (not more then 5)'
                 })
             }
-            
+
             cartProduct.quantity = req.body.quantity
         }
         const addedCart = await cart.save()
 
         res.status(200).json({
-            msg : 'item added to cart successsfully',
-            cart : addedCart
+            msg: 'item added to cart successsfully',
+            cart: addedCart
         })
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err)
         res.status(500).json({
-            error : err
+            error: err
+        })
+    }
+})
+
+Router.get('/whole-cart', async (req, res) => {
+    try {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        const cart = await Cart.findOne({ userId: tokenData.userId }).select('products').populate('products.productId', 'images name')
+        if (!cart) {
+            return res.status(404).json({
+                msg: 'nothing in cart start adding products to continue shopping'
+            })
+        }
+
+        cart.products.forEach(item => {
+            item.productId.images = item.productId.images[0]
+        })
+
+
+        res.status(200).json({
+            cart: cart
+        })
+    }
+    catch (err) {
+        console.log(err)
+        res.status(500).json({
+            error: err
         })
     }
 })
