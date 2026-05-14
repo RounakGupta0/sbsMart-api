@@ -2,6 +2,7 @@ const express = require('express')
 const Router = express.Router()
 const Order = require('../models/Order')
 const Cart = require('../models/Cart')
+const User = require('../models/User')
 const jwt = require('jsonwebtoken')
 const cloudinary = require('cloudinary').v2
 
@@ -20,6 +21,9 @@ Router.post('/placeOrder',async(req,res)=>{
 
         const cart = await Cart.findOne({userId : tokenData.userId})
         console.log(cart)
+
+
+
     }
     catch(err)
     {

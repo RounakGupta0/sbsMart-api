@@ -38,11 +38,6 @@ const orderSchema = mongoose.Schema({
         default: false
     },
 
-    orderedAddress: {
-        type: String,
-        required: true
-    }
-
 }, { timestamps: true })
 
 

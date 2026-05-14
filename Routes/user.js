@@ -30,7 +30,8 @@ Router.post('/signup', async (req, res) => {
             phone: req.body.phone,
             password: hash,
             imageUrl: uploadedImage.secure_url,
-            imageId: uploadedImage.public_id
+            imageId: uploadedImage.public_id,
+            address : req.body.address
         })
 
         await newUser.save()
@@ -39,7 +40,8 @@ Router.post('/signup', async (req, res) => {
             email : newUser.email,
             phone : newUser.phone,
             imageUrl : uploadedImage.secure_url,
-            imageId : uploadedImage.public_id
+            imageId : uploadedImage.public_id,
+            address : newUser.address
         }
 
         res.status(200).json({
@@ -88,7 +90,8 @@ Router.post('/login', async (req, res) => {
             email : user[0].email,
             phone: user[0].phone,
             imageId : user[0].imageId,
-            imageUrl : user[0].imageUrl
+            imageUrl : user[0].imageUrl,
+            address : user[0].address
         })
     }
     catch (err) {
