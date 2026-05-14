@@ -220,6 +220,6 @@ Router.get('/whole-cart', async (req, res) => {
         })
     }
 })
-
+  
 
 module.exports = Router

@@ -30,13 +30,20 @@ const orderSchema = mongoose.Schema({
 
     total: {
         type: Number,
-        required: true
+        required: true,
+        min : 0
     },
 
     isPaid: {
         type: Boolean,
-        default: false
+        default: false,
+        required : true
     },
+
+    orderedAddress: {
+        type: String,
+        required: true
+    }
 
 }, { timestamps: true })
 
