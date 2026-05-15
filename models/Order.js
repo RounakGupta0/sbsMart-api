@@ -31,12 +31,23 @@ const orderSchema = mongoose.Schema({
     total: {
         type: Number,
         required: true,
-        min : 0
+        min: 0
     },
 
-    isPaid: {
-        type: Boolean,
-        default: false,
+    status: {
+        type: String,
+        enum: ["pending", "confirmed", "delivered","cancelled"],
+        default: "pending",
+        required: true
+    },
+
+    paymentProofUrl : {
+        type : String,
+        required : true
+    },
+
+    paymentProofId : {
+        type : String,
         required : true
     },
 
@@ -48,4 +59,4 @@ const orderSchema = mongoose.Schema({
 }, { timestamps: true })
 
 
-module.exports = mongoose.model('Order',orderSchema)
+module.exports = mongoose.model('Order', orderSchema)
