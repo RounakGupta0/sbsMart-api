@@ -123,7 +123,7 @@ Router.get('/allOrdersByUser', async (req, res) => {
 
                 const product = await Product.findById(item.productId)
 
-                images.push(product.images[0])
+                images.push(product ? product.images[0] : null)
             }
 
             data.push({
@@ -151,7 +151,7 @@ Router.get('/:orderId', async (req, res) => {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
 
-        const order = await Order.findOne({ _id: req.params.orderId })
+        const order = await Order.findById(req.params.orderId)
         if (!order) {
             return res.status(500).json({
                 msg: 'order not found'
@@ -165,27 +165,71 @@ Router.get('/:orderId', async (req, res) => {
         }
 
         let data = []
-        for (let p of order.orderedProducts)
-        {
+        for (let p of order.orderedProducts) {
             const product = await Product.findById(p.productId)
             data.push({
-                image : product.images[0],
-                quantity : p.quantity,
-                price : p.price
+                image: product ? product.images[0] : null,
+                quantity: p.quantity,
+                price: p.price
             })
         }
 
         const neworder = {
             data,
-            orderId : order._id,
-            userId : order.userId,
-            status : order.status,
-            total : order.total,
-            orderedAddress : order.address,
-            createdAt : order.createdAt
+            orderId: order._id,
+            userId: order.userId,
+            status: order.status,
+            total: order.total,
+            orderedAddress: order.address,
+            createdAt: order.createdAt
+        }
+
+        if (tokenData.email == process.env.ADMIN_EMAIL)
+        {
+            neworder.paymentProofUrl = order.paymentProofUrl
+            neworder.paymentProofId = order.paymentProofId
         }
 
         res.status(200).json(neworder)
+
+    }
+    catch (err) {
+        console.log(err)
+        res.status(500).json({
+            error: err
+        })
+    }
+})
+
+Router.patch('/confirmOrder/:orderId', async (req, res) => {
+    try {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL) {
+            return res.status(500).json({
+                warning: 'you dont have permisson to perform this operation'
+            })
+        }
+
+        const order = Order.findById(req.params.orderId)
+        if (!order)
+        {
+            return res.status(404).json({
+                msg : 'order nor found'
+            })
+        }
+
+        const status = {
+            status : "confirmed"
+        }
+
+        await Order.findByIdAndUpdate(req.params.orderId,status,{new : true})
+
+        res.status(200).json({
+            msg : 'order confirmed',
+            order : order
+        })
 
     }
     catch (err) {
