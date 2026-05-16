@@ -146,7 +146,7 @@ Router.get('/allOrdersByUser', async (req, res) => {
     }
 })
 
-Router.get('/:orderId', async (req, res) => {
+Router.get('/single/:orderId', async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
@@ -184,8 +184,7 @@ Router.get('/:orderId', async (req, res) => {
             createdAt: order.createdAt
         }
 
-        if (tokenData.email == process.env.ADMIN_EMAIL)
-        {
+        if (tokenData.email == process.env.ADMIN_EMAIL) {
             neworder.paymentProofUrl = order.paymentProofUrl
             neworder.paymentProofId = order.paymentProofId
         }
@@ -212,23 +211,234 @@ Router.patch('/confirmOrder/:orderId', async (req, res) => {
             })
         }
 
-        const order = Order.findById(req.params.orderId)
-        if (!order)
-        {
+        const order = await Order.findById(req.params.orderId)
+        if (!order) {
             return res.status(404).json({
-                msg : 'order nor found'
+                msg: 'order nor found'
             })
         }
 
         const status = {
-            status : "confirmed"
+            status: "confirmed"
         }
 
-        await Order.findByIdAndUpdate(req.params.orderId,status,{new : true})
+        const result = await Order.findByIdAndUpdate(req.params.orderId, status, { new: true })
+
+        let data = []
+        for (let p of order.orderedProducts) {
+            const product = await Product.findById(p.productId)
+            data.push({
+                image: product ? product.images[0] : null,
+                quantity: p.quantity,
+                price: p.price
+            })
+        }
+
+        const neworder = {
+            data,
+            orderId: order._id,
+            userId: order.userId,
+            total: order.total,
+            status: result.status,
+            orderedAddress: order.address,
+            createdAt: order.createdAt
+        }
 
         res.status(200).json({
-            msg : 'order confirmed',
-            order : order
+            msg: 'order confirmed',
+            order: neworder
+        })
+    }
+    catch (err) {
+        console.log(err)
+        res.status(500).json({
+            error: err
+        })
+    }
+})
+
+Router.get('/pendingOrder', async (req, res) => {
+    try {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL) {
+            return res.status(500).json({
+                warning: 'you dont have permisson to perform this operation'
+            })
+        }
+        const orders = await Order.find({
+            status: "pending"
+        })
+        console.log(orders)
+
+        let data = []
+
+        for (let order of orders) {
+
+            let images = []
+
+            for (let item of order.orderedProducts) {
+
+                const product = await Product.findById(item.productId)
+
+                images.push(product ? product.images[0] : null)
+            }
+
+            data.push({
+                images: images,
+                status: order.status,
+                orderId: order._id
+            })
+        }
+
+        res.status(200).json({
+            data: data
+        })
+    }
+    catch (err) {
+        console.log(err)
+        res.status(500).json({
+            error: err
+        })
+    }
+})
+
+Router.patch('/cancelOrder/:orderId', async (req, res) => {
+    try {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        const order = await Order.findById(req.params.orderId)
+        if (!order) {
+            return res.status(404).json({
+                msg: 'order not found'
+            })
+        }
+
+        if (order.status == "cancelled") {
+            return res.status(400).json({
+                msg: 'this order is already cancellled'
+            })
+        }
+
+        if (order.status == "shipped" || order.status == "delivered") {
+            return res.status(400).json({
+                msg: 'cannot cancel order when its shippped'
+            })
+        }
+
+        if (order.userId != tokenData.userId && tokenData.email != process.env.ADMIN_EMAIL) {
+            return res.status(400).json({
+                msg: 'access denied'
+            })
+        }
+
+        let data = []
+        for (let p of order.orderedProducts) {
+            const product = await Product.findById(p.productId)
+            data.push({
+                image: product ? product.images[0] : null,
+                quantity: p.quantity,
+                price: p.price
+            })
+
+            await Product.findByIdAndUpdate(p.productId, {
+                stock: product.stock + p.quantity
+            }, { new: true })
+        }
+
+        const status = {
+            status: "cancelled"
+        }
+
+        const result = await Order.findByIdAndUpdate(req.params.orderId, status, { new: true })
+
+        const neworder = {
+            data,
+            orderId: order._id,
+            userId: order.userId,
+            total: order.total,
+            status: result.status,
+            orderedAddress: order.address,
+            createdAt: order.createdAt
+        }
+
+        if (tokenData.email == process.env.ADMIN_EMAIL) {
+            neworder.paymentProofUrl = order.paymentProofUrl
+            neworder.paymentProofId = order.paymentProofId
+        }
+
+        res.status(200).json(neworder)
+
+    }
+    catch (err) {
+        console.log(err)
+        res.status(500).json({
+            error: err
+        })
+    }
+})
+
+Router.patch('/shipOrder/:orderId', async (req, res) => {
+    try {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL) {
+            return res.status(500).json({
+                warning: 'you dont have permisson to perform this operation'
+            })
+        }
+
+        const order = await Order.findById(req.params.orderId)
+        if (!order) {
+            return res.status(404).json({
+                msg: 'order nor found'
+            })
+        }
+
+        if (order.status == "cancelled") {
+            return res.status(400).json({
+                msg: 'cannot perform this operation'
+            })
+        }
+
+        if (order.status == "shipped") {
+            return res.status(400).json({
+                msg: 'order status is already shipped'
+            })
+        }
+
+        const status = {
+            status: "shipped"
+        }
+
+        const result = await Order.findByIdAndUpdate(req.params.orderId, status, { new: true })
+
+        let data = []
+        for (let p of order.orderedProducts) {
+            const product = await Product.findById(p.productId)
+            data.push({
+                image: product ? product.images[0] : null,
+                quantity: p.quantity,
+                price: p.price
+            })
+        }
+
+        const neworder = {
+            data,
+            orderId: order._id,
+            userId: order.userId,
+            total: order.total,
+            status: result.status,
+            orderedAddress: order.address,
+            createdAt: order.createdAt
+        }
+
+        res.status(200).json({
+            msg: 'order shipped',
+            order: neworder
         })
 
     }
@@ -240,5 +450,74 @@ Router.patch('/confirmOrder/:orderId', async (req, res) => {
     }
 })
 
+Router.patch('/deleiverOrder/:orderId', async (req, res) => {
+    try {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL) {
+            return res.status(500).json({
+                warning: 'you dont have permisson to perform this operation'
+            })
+        }
+
+        const order = await Order.findById(req.params.orderId)
+        if (!order) {
+            return res.status(404).json({
+                msg: 'order nor found'
+            })
+        }
+
+        if (order.status == "cancelled") {
+            return res.status(400).json({
+                msg: 'cannot perform this operation'
+            })
+        }
+
+        if (order.status == "delivered") {
+            return res.status(400).json({
+                msg: 'order status is already delivered'
+            })
+        }
+
+        const status = {
+            status: "delivered"
+        }
+
+        const result = await Order.findByIdAndUpdate(req.params.orderId, status, { new: true })
+
+        let data = []
+        for (let p of order.orderedProducts) {
+            const product = await Product.findById(p.productId)
+            data.push({
+                image: product ? product.images[0] : null,
+                quantity: p.quantity,
+                price: p.price
+            })
+        }
+
+        const neworder = {
+            data,
+            orderId: order._id,
+            userId: order.userId,
+            total: order.total,
+            status: result.status,
+            orderedAddress: order.address,
+            createdAt: order.createdAt
+        }
+
+        res.status(200).json({
+            msg: 'order deleivered',
+            order: neworder
+        })
+
+    }
+    catch (err) {
+        console.log(err)
+        res.status(500).json({
+            error: err
+        })
+    }
+})
 
 module.exports = Router
