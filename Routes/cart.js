@@ -34,7 +34,9 @@ Router.post('/addToCart/:productId', async (req, res) => {
         const cart = await Cart.findOne({ userId: tokenData.userId })
 
         let savedData
+
         if (!cart) {
+
             const newcart = new Cart({
                 userId: tokenData.userId,
                 products: [{
@@ -42,9 +44,12 @@ Router.post('/addToCart/:productId', async (req, res) => {
                     quantity: 1
                 }]
             })
+
             savedData = await newcart.save()
         }
+
         else {
+
             const existingProduct =
                 cart.products.find(
                     i =>
@@ -53,11 +58,13 @@ Router.post('/addToCart/:productId', async (req, res) => {
                 )
 
             if (existingProduct) {
+
                 if (existingProduct.quantity >= product.stock) {
                     return res.status(500).json({
                         msg: 'not is stock'
                     })
                 }
+
                 if (existingProduct.quantity >= 5) {
                     return res.status(400).json({
                         msg: 'max items reached to add in a cart'
@@ -70,19 +77,23 @@ Router.post('/addToCart/:productId', async (req, res) => {
             }
 
             else {
-                cart.products.push(
-                    {
-                        productId: req.params.productId,
-                        quantity: 1
-                    })
+
+                cart.products.push({
+                    productId: req.params.productId,
+                    quantity: 1
+                })
+
                 savedData = await cart.save()
             }
         }
+        const populatedCart = await Cart.findById(savedData._id)
+            .populate('products.productId', 'images')
 
         res.status(200).json({
             msg: 'product added to cart',
-            data: savedData
+            data: populatedCart
         })
+
     }
     catch (err) {
         console.log(err)
@@ -91,7 +102,6 @@ Router.post('/addToCart/:productId', async (req, res) => {
         })
     }
 })
-
 
 Router.delete('/removeFromCart/:productId', async (req, res) => {
     try {
@@ -123,6 +133,15 @@ Router.delete('/removeFromCart/:productId', async (req, res) => {
         }
 
         const savedData = await cart.save()
+
+        const populatedCart = await Cart.findById(savedData._id)
+            .populate('products.productId', 'images')
+        
+        res.status(200).json({
+            msg: 'item removed from cart successfully',
+            data: populatedCart
+        })
+
         res.status(200).json({
             msg: 'item removed from cart successfully',
             data: savedData
@@ -156,7 +175,6 @@ Router.patch('/editQuantity/:productId', async (req, res) => {
         }
         //console.log(cart)
         const cartProduct = cart.products.find(i => i.productId.toString() === req.params.productId)
-        console.log(cartProduct)
         if (!cartProduct) {
             return res.status(500).json({
                 msg: 'product not found'
@@ -175,13 +193,24 @@ Router.patch('/editQuantity/:productId', async (req, res) => {
                 })
             }
 
+            if(cartProduct.quantity == req.body.quantity)
+            {
+                console.log('hi')
+                return res.status(400).json({
+                    msg :'u are sending the same quantity again'
+                })
+            }
+
             cartProduct.quantity = req.body.quantity
         }
         const addedCart = await cart.save()
 
+        const pCart = await Cart.findById(addedCart._id).populate('products.productId','images')
+        console.log(pCart)
+
         res.status(200).json({
             msg: 'item added to cart successsfully',
-            cart: addedCart
+            cart: pCart
         })
     }
     catch (err) {
@@ -197,7 +226,7 @@ Router.get('/whole-cart', async (req, res) => {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
 
-        const cart = await Cart.findOne({ userId: tokenData.userId }).select('products').populate('products.productId', 'images name')
+        const cart = await Cart.findOne({ userId: tokenData.userId }).select('products').populate('products.productId','images name')
         if (!cart) {
             return res.status(404).json({
                 msg: 'nothing in cart start adding products to continue shopping'
@@ -220,6 +249,6 @@ Router.get('/whole-cart', async (req, res) => {
         })
     }
 })
-  
+
 
 module.exports = Router

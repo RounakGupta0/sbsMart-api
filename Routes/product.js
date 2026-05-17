@@ -3,7 +3,8 @@ const express = require('express')
 const Router = express.Router()
 const Product = require('../models/Products')
 const cloudinary = require('cloudinary').v2
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const Products = require('../models/Products');
 
 cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,
@@ -25,10 +26,9 @@ Router.post('/add-product', async (req, res) => {
         // console.log('hello')
         const imageCount = req.files.images.length
         // console.log(imageCount)
-        if (imageCount<2 || imageCount > 10)
-        {
+        if (imageCount < 2 || imageCount > 10) {
             return res.status(500).json({
-                msg : 'upload minimum 2 image and maximum 10 images'
+                msg: 'upload minimum 2 image and maximum 10 images allowed'
             })
         }
         const newimage = []
@@ -75,123 +75,111 @@ Router.post('/add-product', async (req, res) => {
     }
 })
 
-Router.get('/all-products',async(req,res)=>{
-    try 
-    {
+Router.get('/all-products', async (req, res) => {
+    try {
         const product = await Product.find().select("name images")
 
-        product.forEach(i=> {
+        product.forEach(i => {
             i.images = i.images[0]
         })
         //console.log(product)
 
         res.status(200).json({
-            products : product
+            products: product
         })
     }
-    catch (err)
-    {
+    catch (err) {
         console.log(err)
         res.status(500).json({
-            error : err
-        })    
+            error: err
+        })
     }
 })
 
-Router.get('/byCategory/:category',async(req,res)=>{
-    try
-    {
-        const product = await Product.find({category : req.params.category}).select('name images')
-        
-        if(product.length == 0)
-        {
+Router.get('/byCategory/:category', async (req, res) => {
+    try {
+        const product = await Product.find({ category: req.params.category }).select('name images')
+
+        if (product.length == 0) {
             return res.status(500).json({
-                msg : 'no products found for the matching category'
+                msg: 'no products found for the matching category'
             })
         }
 
-        product.forEach(i=> {
+        product.forEach(i => {
             i.images = i.images[0]
         })
 
         res.status(200).json({
-            products : product
+            products: product
         })
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err)
         res.status(500).json({
-            error : err
+            error: err
         })
     }
 })
 
-Router.get('/byName/:name',async(req,res)=>{
-    try
-    {
-        const product = await Product.find({name : req.params.name}).select('name images')
-        if (product.length == 0)
-        {
+Router.get('/byName/:name', async (req, res) => {
+    try {
+        const product = await Product.find({ name: req.params.name }).select('name images')
+        if (product.length == 0) {
             return res.status(500).json({
-                msg : 'no products found for the matching name'
+                msg: 'no products found for the matching name'
             })
         }
 
-        product.forEach(i=> {
+        product.forEach(i => {
             i.images = i.images[0]
         })
         res.status(200).json({
-            products : product
+            products: product
         })
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err)
         res.status(500).json({
-            error : err
+            error: err
         })
     }
 })
 
 
-Router.get('/:productId',async(req,res)=>{
-    try
-    {
+Router.get('/single/:productId', async (req, res) => {
+    try {
         const product = await Product.findById(req.params.productId).select('name description images brand price category likeCount')
+
         res.status(200).json({
-            product :product
+            product: product
         })
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err)
         res.status(500).json({
-            error : err
+            error: err
         })
     }
 })
 
 
 
-Router.put('/update/:productId',async(req,res)=>{
-    try
-    {
+Router.put('/update/:productId', async (req, res) => {
+    try {
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token,process.env.SEC_KEY)
-        
-        if (tokenData.email != process.env.ADMIN_EMAIL)
-        {
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL) {
             return res.status(500).json({
-                warning : 'you dont have permisson to perform this operation'
+                warning: 'you dont have permisson to perform this operation'
             })
         }
 
         const product = await Product.findById(req.params.productId)
-        if (!product)
-        {
+        if (!product) {
             return res.status(404).json({
-                msg :' no product found'
+                msg: ' no product found'
             })
         }
 
@@ -200,64 +188,58 @@ Router.put('/update/:productId',async(req,res)=>{
         //     // console.log(i.imageId)
         //     await cloudinary.uploader.destroy(i.imageId)
         // }
-        
+
         const newproduct = {
-            name : req.body.name,
-            price : req.body.price,
-            brand : req.body.brand,
-            description : req.body.description,
-            images : product.images,
-            stock : req.body.stock,
-            category : req.body.category,
-            likeCount : product.likeCount,
-            likedBy : product.likedBy,
+            name: req.body.name,
+            price: req.body.price,
+            brand: req.body.brand,
+            description: req.body.description,
+            images: product.images,
+            stock: req.body.stock,
+            category: req.body.category,
+            likeCount: product.likeCount,
+            likedBy: product.likedBy,
         }
 
-        const updatedData = await Product.findByIdAndUpdate(req.params.productId,newproduct,{ new : true })
+        const updatedData = await Product.findByIdAndUpdate(req.params.productId, newproduct, { new: true })
         res.status(200).json({
-            msg : 'updated successfully',
-            data : updatedData
+            msg: 'updated successfully',
+            data: updatedData
         })
 
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err)
         res.status(500).json({
-            error : err
+            error: err
         })
     }
 })
 
-Router.delete('/:productId',async(req,res)=>{
-    try
-    {
+Router.delete('/single/:productId', async (req, res) => {
+    try {
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token,process.env.SEC_KEY)
-        
-        if (tokenData.email != process.env.ADMIN_EMAIL)
-        {
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL) {
             return res.status(500).json({
-                warning : 'you dont have permisson to perform this operation'
+                warning: 'you dont have permisson to perform this operation'
             })
         }
 
         const product = await Product.findById(req.params.productId)
-        if (!product)
-        {
+        if (!product) {
             return res.status(500).json({
-                msg : 'no product found'
+                msg: 'no product found'
             })
         }
 
-        for (let i of product.images)
-        {
+        for (let i of product.images) {
             const deleted = await cloudinary.uploader.destroy(i.imageId)
-            if (deleted.result != 'ok')
-            {
+            if (deleted.result != 'ok') {
 
                 return res.status(500).json({
-                    msg : 'something went wrong pls try again later'
+                    msg: 'something went wrong pls try again later'
                 })
             }
 
@@ -267,99 +249,154 @@ Router.delete('/:productId',async(req,res)=>{
         // console.log(deletedProduct)
 
         res.status(200).json({
-            msg : 'product deleted successfully'
+            msg: 'product deleted successfully'
         })
 
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err)
         res.status(500).json({
-            error : err
+            error: err
         })
     }
 })
 
-Router.patch('/stockadd/:productId',async(req,res)=>{
-    try
-    {
+Router.patch('/stockadd/:productId', async (req, res) => {
+    try {
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token,process.env.SEC_KEY)
-        
-        if (tokenData.email != process.env.ADMIN_EMAIL)
-        {
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL) {
             return res.status(500).json({
-                warning : 'you dont have permisson to perform this operation'
+                warning: 'you dont have permisson to perform this operation'
             })
         }
 
         const product = await Product.findById(req.params.productId)
-        if (!product){
+        if (!product) {
             return res.status(500).json({
-                msg : 'product not found'
+                msg: 'product not found'
             })
         }
 
         const stock = {
-            stock : Number(req.body.stock) + product.stock
+            stock: Number(req.body.stock) + product.stock
         }
 
-        const updatedData = await Product.findByIdAndUpdate(req.params.productId,stock,{new : true})
+        const updatedData = await Product.findByIdAndUpdate(req.params.productId, stock, { new: true })
         //console.log(updatedData)
 
         res.status(200).json({
-            msg : 'stock updated successfully',
-            data : updatedData
+            msg: 'stock updated successfully',
+            data: updatedData
         })
 
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err)
         res.status(500).json({
-            error : err
+            error: err
         })
     }
 })
 
-Router.patch('/priceChange/:productId',async(req,res)=>{
-    try
-    {
+Router.patch('/priceChange/:productId', async (req, res) => {
+    try {
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token,process.env.SEC_KEY)
-        
-        if (tokenData.email != process.env.ADMIN_EMAIL)
-        {
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL) {
             return res.status(500).json({
-                warning : 'you dont have permisson to perform this operation'
+                warning: 'you dont have permisson to perform this operation'
             })
         }
 
         const product = await Product.findById(req.params.productId)
-        if (!product)
-        {
+        if (!product) {
             return res.status(500).json({
-                msg : 'no product found'
+                msg: 'no product found'
             })
         }
 
         const price = {
-            price : req.body.price
+            price: req.body.price
         }
 
-        const updatedPrice = await Product.findByIdAndUpdate(req.params.productId,price,{new : true})
+        const updatedPrice = await Product.findByIdAndUpdate(req.params.productId, price, { new: true }).select(' -likedBy')
 
         res.status(200).json({
-            msg : 'price updated successfully',
-            data : updatedPrice
+            msg: 'price updated successfully',
+            data: updatedPrice
         })
+    }
+    catch (err) {
+        console.log(err)
+        res.status(500).json({
+            error: err
+        })
+    }
+})
+
+Router.get('/outOfStock', async (req, res) => {
+    try {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL) {
+            return res.status(500).json({
+                warning: 'you dont have permisson to perform this operation'
+            })
+        }
+
+        const products = await Products.find({stock : 0}).select('name price images')
+
+        
+        products.forEach(i => {
+            i.images = i.images[0]
+        })
+
+        res.status(200).json({
+            data : products
+        })
+
+    }
+    catch (err) {
+        console.log(err)
+        res.status(500).json({
+            error: err
+        })
+    }
+})
+
+Router.get('/lowStock',async(req,res)=>{
+    try
+    {
+        const token = req.headers.authorization.split(" ")[1]
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+
+        if (tokenData.email != process.env.ADMIN_EMAIL) {
+            return res.status(500).json({
+                warning: 'you dont have permisson to perform this operation'
+            })
+        }
+
+        const products = await Product.find().select('images name stock')
+        const lowstock = products.filter(i=> i.stock < 5)
+
+        lowstock.forEach(i=>{
+            i.images = i.images[0]
+        })
+
+        res.status(200).json({
+            data : lowstock
+        })
+
+
     }
     catch(err)
     {
         console.log(err)
-        res.status(500).json({
-            error : err
-        })
+        error : err
     }
 })
 

@@ -59,7 +59,7 @@ Router.post('/placeOrder', async (req, res) => {
             orderedProducts.push({
                 productId: i.productId,
                 quantity: orderedQuantity,
-                price: product.price
+                price: product.price,
             })
 
             orderedProductId.push({
@@ -88,9 +88,12 @@ Router.post('/placeOrder', async (req, res) => {
         const neworder = await order.save()
         await Cart.findByIdAndDelete(cart._id)
 
+        const populatedOrder = await Order.findById(neworder._id).populate('orderedProducts.productId', 'images')
+
+
         res.status(200).json({
             msg: 'order placed',
-            order: neworder
+            order: populatedOrder
         })
 
 
@@ -270,8 +273,7 @@ Router.get('/pendingOrder', async (req, res) => {
         const orders = await Order.find({
             status: "pending"
         })
-        console.log(orders)
-
+        
         let data = []
 
         for (let order of orders) {
