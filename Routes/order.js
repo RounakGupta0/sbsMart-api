@@ -257,7 +257,7 @@ Router.patch('/confirmOrder/:orderId', async (req, res) => {
             userId: order.userId,
             total: order.total,
             status: result.status,
-            orderedAddress: order.address,
+            orderedAddress: order.orderedAddress,
             createdAt: order.createdAt
         }
 
@@ -376,7 +376,7 @@ Router.patch('/cancelOrder/:orderId', async (req, res) => {
             userId: order.userId,
             total: order.total,
             status: result.status,
-            orderedAddress: order.address,
+            orderedAddress: order.orderedAddress,
             createdAt: order.createdAt
         }
 
@@ -449,7 +449,7 @@ Router.patch('/shipOrder/:orderId', async (req, res) => {
             userId: order.userId,
             total: order.total,
             status: result.status,
-            orderedAddress: order.address,
+            orderedAddress: order.orderedAddress,
             createdAt: order.createdAt
         }
 
@@ -520,7 +520,7 @@ Router.patch('/deleiverOrder/:orderId', async (req, res) => {
             userId: order.userId,
             total: order.total,
             status: result.status,
-            orderedAddress: order.address,
+            orderedAddress: order.orderedAddress,
             createdAt: order.createdAt
         }
 
