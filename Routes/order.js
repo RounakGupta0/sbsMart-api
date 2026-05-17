@@ -183,7 +183,7 @@ Router.get('/single/:orderId', async (req, res) => {
             userId: order.userId,
             status: order.status,
             total: order.total,
-            orderedAddress: order.address,
+            orderedAddress: order.orderedAddress,
             createdAt: order.createdAt
         }
 
@@ -218,6 +218,20 @@ Router.patch('/confirmOrder/:orderId', async (req, res) => {
         if (!order) {
             return res.status(404).json({
                 msg: 'order nor found'
+            })
+        }
+
+        if (order.status == "cancelled")
+        {
+            return res.status(400).json({
+                msg : 'order is cancelled cannot perform such action'
+            })
+        }
+
+        if (order.status != "pending")
+        {
+            return res.status(400).json({
+                msg : 'cannot perform such operations'
             })
         }
 
@@ -273,7 +287,7 @@ Router.get('/pendingOrder', async (req, res) => {
         const orders = await Order.find({
             status: "pending"
         })
-        
+
         let data = []
 
         for (let order of orders) {
@@ -326,7 +340,7 @@ Router.patch('/cancelOrder/:orderId', async (req, res) => {
 
         if (order.status == "shipped" || order.status == "delivered") {
             return res.status(400).json({
-                msg: 'cannot cancel order when its shippped'
+                msg: `cannot cancel order when its already ${order.status}`
             })
         }
 
@@ -406,11 +420,12 @@ Router.patch('/shipOrder/:orderId', async (req, res) => {
             })
         }
 
-        if (order.status == "shipped") {
+        if (order.status != "confirmed") {
             return res.status(400).json({
-                msg: 'order status is already shipped'
+                msg: 'the order isnt confirmed yet'
             })
         }
+
 
         const status = {
             status: "shipped"
@@ -476,9 +491,10 @@ Router.patch('/deleiverOrder/:orderId', async (req, res) => {
             })
         }
 
-        if (order.status == "delivered") {
+        if (order.status != "shipped")
+        {
             return res.status(400).json({
-                msg: 'order status is already delivered'
+                msg : 'order isnt shipped yet to peroform the operation'
             })
         }
 
