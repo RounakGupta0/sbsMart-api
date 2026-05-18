@@ -19,7 +19,7 @@ Router.post('/placeOrder', async (req, res) => {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
 
-        const cart = await Cart.findOne({ userId: tokenData.userId }).select('products')
+        const cart = await Cart.findOne({ userId: tokenData.userId }).select('products').populate('products.productId')
         if (!cart) {
             return res.status(500).json({
                 msg: 'cart not found'
@@ -32,17 +32,21 @@ Router.post('/placeOrder', async (req, res) => {
             })
         }
 
+        const uploadedFile = await cloudinary.uploader.upload(req.files.payment.tempFilePath)
+
+
         let total = 0
         let orderedProducts = []
         let orderedQuantity
         let orderedProductId = []
         for (let i of cart.products) {
             let stockQuantity
-            const product = await Product.findById(i.productId)
+            const product = i.productId
             if (!product) {
-                return res.status(500).json({
-                    msg: 'product not found or something went wrong'
-                })
+                // return res.status(500).json({
+                //     msg: `${i.productId.name} not found or something went wrong`
+                // })
+                continue
             }
 
             orderedQuantity = i.quantity
@@ -72,8 +76,6 @@ Router.post('/placeOrder', async (req, res) => {
             i.product.stock -= i.quantity
             await i.product.save()
         }
-
-        const uploadedFile = await cloudinary.uploader.upload(req.files.payment.tempFilePath)
 
 
         const order = new Order({
@@ -114,22 +116,36 @@ Router.get('/allOrdersByUser', async (req, res) => {
 
         const orders = await Order.find({
             userId: tokenData.userId
-        })
+        }).populate('orderedProducts.productId')
 
+        //console.log(orders)
         let data = []
 
         for (let order of orders) {
 
             let images = []
+            let productId = []
 
             for (let item of order.orderedProducts) {
 
-                const product = await Product.findById(item.productId)
+                // const products = await Product.findById(item.productId)
 
-                images.push(product ? product.images[0] : null)
+                //console.log(item)
+
+                if (!item.productId){
+                    item.productId = {}
+                }
+                // images.push(product ? product.images[0] : null)
+                // images.push(product ? product._id : null)
+                images.push({
+                    product: item.productId.images[0],
+                    productId: item.productId._id,
+                })
+                //console.log(images)
             }
 
             data.push({
+                // productId : images._id,
                 images: images,
                 status: order.status,
                 orderId: order._id
@@ -142,7 +158,7 @@ Router.get('/allOrdersByUser', async (req, res) => {
 
     }
     catch (err) {
-
+        console.log(err)
         res.status(500).json({
             error: err
         })
@@ -154,7 +170,7 @@ Router.get('/single/:orderId', async (req, res) => {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
 
-        const order = await Order.findById(req.params.orderId)
+        const order = await Order.findById(req.params.orderId).populate('orderedProducts.productId')
         if (!order) {
             return res.status(500).json({
                 msg: 'order not found'
@@ -168,12 +184,26 @@ Router.get('/single/:orderId', async (req, res) => {
         }
 
         let data = []
-        for (let p of order.orderedProducts) {
-            const product = await Product.findById(p.productId)
+            for (let item of order.orderedProducts) {
+                let images =[]
+
+                // const products = await Product.findById(item.productId)
+
+                //console.log(item)
+
+                if (!item.productId){
+                    item.productId = {}
+                }
+                // images.push(product ? product.images[0] : null)
+                // images.push(product ? product._id : null)
+                images.push({
+                    product: item.productId.images[0],
+                    productId: item.productId._id,
+                })
             data.push({
-                image: product ? product.images[0] : null,
-                quantity: p.quantity,
-                price: p.price
+                image: images,
+                quantity: item.quantity,
+                price: item.price
             })
         }
 
@@ -214,24 +244,22 @@ Router.patch('/confirmOrder/:orderId', async (req, res) => {
             })
         }
 
-        const order = await Order.findById(req.params.orderId)
+        const order = await Order.findById(req.params.orderId).populate('product.')
         if (!order) {
             return res.status(404).json({
                 msg: 'order nor found'
             })
         }
 
-        if (order.status == "cancelled")
-        {
+        if (order.status == "cancelled") {
             return res.status(400).json({
-                msg : 'order is cancelled cannot perform such action'
+                msg: 'order is cancelled cannot perform such action'
             })
         }
 
-        if (order.status != "pending")
-        {
+        if (order.status != "pending") {
             return res.status(400).json({
-                msg : 'cannot perform such operations'
+                msg: 'cannot perform such operations'
             })
         }
 
@@ -491,10 +519,9 @@ Router.patch('/deleiverOrder/:orderId', async (req, res) => {
             })
         }
 
-        if (order.status != "shipped")
-        {
+        if (order.status != "shipped") {
             return res.status(400).json({
-                msg : 'order isnt shipped yet to peroform the operation'
+                msg: 'order isnt shipped yet to peroform the operation'
             })
         }
 
