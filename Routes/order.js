@@ -309,7 +309,7 @@ Router.patch('/confirmOrder/:orderId', async (req, res) => {
     }
 })
 
-Router.get('/pendingOrder', async (req, res) => {
+Router.get('/byStatus/:category', async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
@@ -320,7 +320,7 @@ Router.get('/pendingOrder', async (req, res) => {
             })
         }
         const orders = await Order.find({
-            status: "pending"
+            status: req.params.category
         }).populate('orderedProducts.productId')
 
         let data = []
