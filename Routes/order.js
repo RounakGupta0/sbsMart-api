@@ -132,7 +132,7 @@ Router.get('/allOrdersByUser', async (req, res) => {
 
                 //console.log(item)
 
-                if (!item.productId){
+                if (!item.productId) {
                     item.productId = {}
                 }
                 // images.push(product ? product.images[0] : null)
@@ -184,22 +184,22 @@ Router.get('/single/:orderId', async (req, res) => {
         }
 
         let data = []
-            for (let item of order.orderedProducts) {
-                let images =[]
+        for (let item of order.orderedProducts) {
+            let images = []
 
-                // const products = await Product.findById(item.productId)
+            // const products = await Product.findById(item.productId)
 
-                //console.log(item)
+            //console.log(item)
 
-                if (!item.productId){
-                    item.productId = {}
-                }
-                // images.push(product ? product.images[0] : null)
-                // images.push(product ? product._id : null)
-                images.push({
-                    product: item.productId.images[0],
-                    productId: item.productId._id,
-                })
+            if (!item.productId) {
+                item.productId = {}
+            }
+            // images.push(product ? product.images[0] : null)
+            // images.push(product ? product._id : null)
+            images.push({
+                product: item.productId.images[0],
+                productId: item.productId._id,
+            })
             data.push({
                 image: images,
                 quantity: item.quantity,
@@ -244,7 +244,7 @@ Router.patch('/confirmOrder/:orderId', async (req, res) => {
             })
         }
 
-        const order = await Order.findById(req.params.orderId).populate('product.')
+        const order = await Order.findById(req.params.orderId).populate('orderedProducts.productId')
         if (!order) {
             return res.status(404).json({
                 msg: 'order nor found'
@@ -263,19 +263,26 @@ Router.patch('/confirmOrder/:orderId', async (req, res) => {
             })
         }
 
-        const status = {
-            status: "confirmed"
-        }
 
-        const result = await Order.findByIdAndUpdate(req.params.orderId, status, { new: true })
+        const result = await Order.findByIdAndUpdate(req.params.orderId, {status: "confirmed"}, { new: true })
 
         let data = []
-        for (let p of order.orderedProducts) {
-            const product = await Product.findById(p.productId)
+        for (let item of order.orderedProducts) {
+            let images = []
+
+            if (!item.productId) {
+                item.productId = {}
+            }
+
+            images.push({
+                product: item.productId.images[0],
+                productId: item.productId._id,
+            })
+            
             data.push({
-                image: product ? product.images[0] : null,
-                quantity: p.quantity,
-                price: p.price
+                image: images,
+                quantity: item.quantity,
+                price: item.price
             })
         }
 
@@ -314,7 +321,7 @@ Router.get('/pendingOrder', async (req, res) => {
         }
         const orders = await Order.find({
             status: "pending"
-        })
+        }).populate('orderedProducts.productId')
 
         let data = []
 
@@ -353,7 +360,7 @@ Router.patch('/cancelOrder/:orderId', async (req, res) => {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
 
-        const order = await Order.findById(req.params.orderId)
+        const order = await Order.findById(req.params.orderId).populate('orderedProducts.productId')
         if (!order) {
             return res.status(404).json({
                 msg: 'order not found'
@@ -387,7 +394,7 @@ Router.patch('/cancelOrder/:orderId', async (req, res) => {
                 price: p.price
             })
 
-            await Product.findByIdAndUpdate(p.productId, {
+        await Product.findByIdAndUpdate(p.productId, {
                 stock: product.stock + p.quantity
             }, { new: true })
         }
