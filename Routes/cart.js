@@ -8,8 +8,14 @@ const Products = require('../models/Products')
 
 Router.post('/addToCart/:productId', async (req, res) => {
     try {
-        const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        try{
+            const token = req.headers.authorization.split(" ")[1]
+            const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        }catch(err){
+            return res.status(401).json({
+                msg: 'please login to access cart and other features'
+            })
+        }
 
         const user = await User.findById(tokenData.userId)
         if (!user) {

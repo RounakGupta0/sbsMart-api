@@ -16,8 +16,10 @@ cloudinary.config({
 
 Router.post('/placeOrder', async (req, res) => {
     try {
+        let tokenData;
+
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        tokenData = jwt.verify(token, process.env.user_SEC_KEY)
 
         const cart = await Cart.findOne({ userId: tokenData.userId }).select('products').populate('products.productId')
         if (!cart) {
@@ -112,7 +114,7 @@ Router.get('/allOrdersByUser', async (req, res) => {
     try {
 
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.user_SEC_KEY)
 
         const orders = await Order.find({
             userId: tokenData.userId
@@ -168,7 +170,7 @@ Router.get('/allOrdersByUser', async (req, res) => {
 Router.get('/single/:orderId', async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.user_SEC_KEY)
 
         const order = await Order.findById(req.params.orderId).populate('orderedProducts.productId')
         if (!order) {
@@ -236,7 +238,7 @@ Router.get('/single/:orderId', async (req, res) => {
 Router.patch('/confirmOrder/:orderId', async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.user_SEC_KEY)
 
         if (tokenData.email != process.env.ADMIN_EMAIL) {
             return res.status(500).json({
@@ -312,7 +314,7 @@ Router.patch('/confirmOrder/:orderId', async (req, res) => {
 Router.get('/byStatus/:category', async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.user_SEC_KEY)
 
         if (tokenData.email != process.env.ADMIN_EMAIL) {
             return res.status(500).json({
@@ -358,7 +360,7 @@ Router.get('/byStatus/:category', async (req, res) => {
 Router.patch('/cancelOrder/:orderId', async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.user_SEC_KEY)
 
         const order = await Order.findById(req.params.orderId).populate('orderedProducts.productId')
         if (!order) {
@@ -434,7 +436,7 @@ Router.patch('/cancelOrder/:orderId', async (req, res) => {
 Router.patch('/shipOrder/:orderId', async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.user_SEC_KEY)
 
         if (tokenData.email != process.env.ADMIN_EMAIL) {
             return res.status(500).json({
@@ -505,7 +507,7 @@ Router.patch('/shipOrder/:orderId', async (req, res) => {
 Router.patch('/deleiverOrder/:orderId', async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.user_SEC_KEY)
 
         if (tokenData.email != process.env.ADMIN_EMAIL) {
             return res.status(500).json({
