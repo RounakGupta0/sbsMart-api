@@ -35,7 +35,7 @@ router.post("/add-product", async (req, res) => {
   }   catch(err){
     return res.status(401).json({
       success: false,
-      message: "Invalid ADMIN",
+      message: "Only admins are allowed to add products",
     });
   }
 
