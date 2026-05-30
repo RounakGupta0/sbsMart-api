@@ -11,7 +11,7 @@ cloudinary.config({
     api_secret: process.env.API_SECRET
 })
 
-Router.post('/signup', async (req, res) => {
+Router.post('/signup_user', async (req, res) => {
     try {
         const user = await User.find({ email: req.body.email })
         if (user.length > 0) {
@@ -58,7 +58,7 @@ Router.post('/signup', async (req, res) => {
 })
 
 
-Router.post('/login', async (req, res) => {
+Router.post('/login_user', async (req, res) => {
     try {
         const user = await User.find({ email: req.body.email })
         if (user.length != 1) {
@@ -79,9 +79,9 @@ Router.post('/login', async (req, res) => {
             email: user[0].email,
             phone: user[0].phone
         },
-            process.env.SEC_KEY,
+            process.env.user_SEC_KEY,
             {
-                expiresIn: '10d'
+                expiresIn: '365d'
             })
 
         res.status(200).json({
