@@ -88,13 +88,9 @@ router.post("/add-product", async (req, res) => {
       category,
       brand,
       description,
-      images: [
-        {
-          imageUrl: uploadedImage.secure_url,
-          imageId: uploadedImage.public_id,
-        },
-      ],
 
+      imageUrl: uploadedImage.secure_url,
+      imageId: uploadedImage.public_id,
 
       addedBy: tokenData._id,
     });
@@ -117,81 +113,6 @@ router.post("/add-product", async (req, res) => {
     });
   }
 });
-
-
-router.delete("/delete-product/:id", async (req, res) => {
-  try {
-    //token verification
-
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-      return res.status(401).json({
-        success: false,
-        message: "Token Missing",
-      });
-    }
-
-    let tokenData;
-
-    try {
-      const token = authHeader.split(" ")[1];
-
-      tokenData = jwt.verify(
-        token,
-        process.env.admin_SEC_KEY
-      );
-    } catch (err) {
-      return res.status(401).json({
-        success: false,
-        message: "Only admins are allowed",
-      });
-    }
-
-    // get product id from params
-
-    const productId = req.params.id;
-
-    const product = await Product.findById(productId);
-
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product Not Found",
-      });
-    }
-//delete images from cloudinary
-
-    if (product.images && product.images.length > 0) {
-      for (const image of product.images) {
-        if (image.imageId) {
-          await cloudinary.uploader.destroy(image.imageId);
-        }
-      }
-    }
-
- //delete product from database
-
-    await Product.findByIdAndDelete(productId);
-
-  
-
-    return res.status(200).json({
-      success: true,
-      message: "Product Deleted Successfully",
-    });
-
-  } catch (error) {
-    console.log(error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
-
-
 
 module.exports = router;
 
