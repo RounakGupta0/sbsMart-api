@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const express = require("express");
 const Router = express.Router();
 
-Router.post("/signup_admin", async (req, res) => {
+Router.post("/signup", async (req, res) => {
     try{
         const admins = await Admin.find({ email: req.body.email });
 
@@ -33,7 +33,7 @@ Router.post("/signup_admin", async (req, res) => {
     }
 });
 
-Router.post('/loginadmin', async (req, res) => {
+Router.post('/login', async (req, res) => {
 
     try {
         const email = req.body.email;
@@ -66,9 +66,9 @@ Router.post('/loginadmin', async (req, res) => {
                 _id: admins[0]._id,
                 email: admins[0].email
             },
-            process.env.admin_SEC_KEY,
+            "ak47",
             {
-                expiresIn: "365d"
+                expiresIn: "7d"
             }
         );
         res.status(200).json({
